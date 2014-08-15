@@ -17,11 +17,19 @@ Requirements
 Installing
 ----------
 
-run setup.rb:
+Add this line to your application's Gemfile:
 
-	ruby setup.rb config
-	ruby setup.rb setup
-	ruby setup.rb install
+```ruby
+gem 'xhtmldiff'
+```
+
+And then execute:
+
+    $ bundle
+
+Or install it yourself as:
+
+    $ gem install xhtmldiff
 
 That's it.
 
