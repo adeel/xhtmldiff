@@ -34,3 +34,5 @@ sample, but I think it makes decent browsers do the right thing.
 Author
 -----
 Aria Stewart <aredridel@nbtsc.org>
+
+Tweaks by Jacques Distler.

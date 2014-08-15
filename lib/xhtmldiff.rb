@@ -1,4 +1,13 @@
 #!/usr/bin/env ruby
+# Author: Aredridel <aredridel@nbtsc.org>
+# Website: http://theinternetco.net/projects/ruby/xhtmldiff.html
+# Licence: same as Ruby
+# Version: 1.2.2
+#
+# Tweaks by Jacques Distler <distler@golem.ph.utexas.edu>
+#  -- add classnames to <del> and <ins> elements added by XHTMLDiff,
+#     for better CSS styling
+#  -- detect change in element name, without change in content
 
 require 'diff/lcs'
 require 'rexml/document'
@@ -56,7 +65,7 @@ class XHTMLDiff
 			if a == b
 				return a.deep_clone
 			end
-			if REXML::HashableElementDelegator === a and REXML::HashableElementDelegator === b
+			if REXML::HashableElementDelegator === a and REXML::HashableElementDelegator === b and a.name == b.name
 				o = REXML::Element.new(a.name)
 				o.add_attributes  a.attributes
 				hd = self.new(o)
@@ -90,7 +99,7 @@ class XHTMLDiff
 
   # This will be called when there is an element in A that isn't in B
   def discard_a(event)
-		@output << wrap(event.old_element, 'del') 
+		@output << wrap(event.old_element, 'del', 'diffdel')
   end
   
 	def change(event)
@@ -102,53 +111,62 @@ class XHTMLDiff
 		if sd and (ratio = (Float(rs = sd.to_s.gsub(%r{<(ins|del)>.*</\1>}, '').size) / bs = Math.max(event.old_element.to_s.size, event.new_element.to_s.size))) > 0.5
 			@output << sd
 		else
-			@output << wrap(event.old_element, 'del')
-			@output << wrap(event.new_element, 'ins')
+			@output << wrap(event.old_element, 'del', 'diffmod')
+			@output << wrap(event.new_element, 'ins', 'diffmod')
 		end
   end
 
   # This will be called when there is an element in B that isn't in A
   def discard_b(event)
-		@output << wrap(event.new_element, 'ins')
+		@output << wrap(event.new_element, 'ins', 'diffins')
 	end
 
 	def choose_event(event, element, tag)
   end
 
-	def wrap(element, tag = nil)
+	def wrap(element, tag = nil, class_name = nil)
 		if tag 
 			el = Element.new tag
 			el << element.deep_clone
 		else
 			el = element.deep_clone
 		end
+                if class_name
+                   el.add_attribute('class', class_name)
+                end
 		el
 	end
 
 	class XHTMLTextDiff < XHTMLDiff
 		def change(event)
-			@output << wrap(event.old_element, 'del')
-			@output << wrap(event.new_element, 'ins')
+			@output << wrap(event.old_element, 'del', 'diffmod')
+			@output << wrap(event.new_element, 'ins', 'diffmod')
 		end
 
 		# This will be called with both elements are the same
 		def match(event)
-			@output << wrap(event.old_element, nil) if event.old_element
+			@output << wrap(event.old_element, nil, nil) if event.old_element
 		end
 
 		# This will be called when there is an element in A that isn't in B
 		def discard_a(event)
-			@output << wrap(event.old_element, 'del') 
+			@output << wrap(event.old_element, 'del', 'diffdel')
 		end
 		
 		# This will be called when there is an element in B that isn't in A
 		def discard_b(event)
-			@output << wrap(event.new_element, 'ins')
+			@output << wrap(event.new_element, 'ins', 'diffins')
 		end
 
-		def wrap(element, tag)
+		def wrap(element, tag = nil, class_name = nil)
 			element = REXML::Text.new(" " << element) if String === element
-			super element, tag
+                        return element unless tag
+                        wrapper_element = REXML::Element.new(tag)
+                        wrapper_element.add_text element
+                        if class_name
+                           wrapper_element.add_attribute('class', class_name)
+                        end
+                        wrapper_element
 		end
 	end
 		
